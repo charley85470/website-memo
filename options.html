@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Memo 設定</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>完整設定</h1>
+      <div class="domain-picker">
+        <label for="domainSelect">網域</label>
+        <select id="domainSelect"></select>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist">
+      <button id="tabMemo" class="active" type="button">Memo 設定</button>
+      <button id="tabBorder" type="button">Border 設定</button>
+    </div>
+
+    <section id="memoList" class="list"></section>
+    <section id="borderList" class="list hidden"></section>
+  </main>
+
+  <template id="itemTemplate">
+    <article class="item">
+      <div class="item-head">
+        <div class="meta"></div>
+        <div class="actions">
+          <button class="btn-edit" type="button">編輯</button>
+          <button class="btn-delete danger" type="button">刪除</button>
+        </div>
+      </div>
+      <div class="item-content"></div>
+      <form class="edit-form hidden"></form>
+    </article>
+  </template>
+
+  <script src="options.js"></script>
+</body>
+</html>
