@@ -10,11 +10,20 @@
   <main class="container">
     <header>
       <h1>完整設定</h1>
-      <div class="domain-picker">
-        <label for="domainSelect">網域</label>
-        <select id="domainSelect"></select>
+      <div class="header-tools">
+        <div class="domain-picker">
+          <label for="domainSelect">網域</label>
+          <select id="domainSelect"></select>
+        </div>
+        <div class="backup-tools">
+          <button id="exportJson" type="button">匯出 JSON</button>
+          <button id="importJson" type="button">匯入 JSON</button>
+          <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
+        </div>
       </div>
     </header>
+
+    <div id="backupStatus" class="backup-status"></div>
 
     <div class="tabs" role="tablist">
       <button id="tabMemo" class="active" type="button">Memo 設定</button>

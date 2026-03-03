@@ -16,11 +16,21 @@ header {
   justify-content: space-between;
   margin-bottom: 14px;
 }
+.header-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 h1 {
   margin: 0;
   font-size: 24px;
 }
 .domain-picker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.backup-tools {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -103,4 +113,10 @@ button.danger { background: #dc2626; }
   border-radius: 8px;
   padding: 16px;
   color: #6b7280;
+}
+.backup-status {
+  min-height: 18px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #047857;
 }

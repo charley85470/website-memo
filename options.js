@@ -4,6 +4,10 @@
   const memoList = document.getElementById('memoList');
   const borderList = document.getElementById('borderList');
   const domainSelect = document.getElementById('domainSelect');
+  const exportJsonBtn = document.getElementById('exportJson');
+  const importJsonBtn = document.getElementById('importJson');
+  const importFileInput = document.getElementById('importFile');
+  const backupStatus = document.getElementById('backupStatus');
   const itemTemplate = document.getElementById('itemTemplate');
 
   const state = {
@@ -18,6 +22,11 @@
     return `單頁: ${entry.scopeValue}`;
   }
 
+  function showBackupStatus(message, isError = false) {
+    backupStatus.textContent = message;
+    backupStatus.style.color = isError ? '#b91c1c' : '#047857';
+  }
+
   function getUniqueDomains(entries) {
     return [...new Set(entries.map((entry) => entry.domain).filter(Boolean))].sort();
   }
@@ -29,6 +38,108 @@
 
   async function setEntries(entries) {
     await chrome.storage.local.set({ entries });
+  }
+
+  function sanitizeScopeType(scopeType) {
+    return ['domain', 'parent', 'page'].includes(scopeType) ? scopeType : 'page';
+  }
+
+  function sanitizeText(value) {
+    return typeof value === 'string' ? value : '';
+  }
+
+  function sanitizeColor(value, fallback) {
+    if (typeof value !== 'string') return fallback;
+    return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+  }
+
+  function sanitizeEntry(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+    const type = entry.type === 'border' ? 'border' : entry.type === 'memo' ? 'memo' : null;
+    if (!type) return null;
+
+    const normalized = {
+      id: typeof entry.id === 'string' && entry.id ? entry.id : crypto.randomUUID(),
+      type,
+      domain: sanitizeText(entry.domain),
+      scopeType: sanitizeScopeType(entry.scopeType),
+      scopeValue: sanitizeText(entry.scopeValue),
+      createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : Date.now()
+    };
+
+    if (type === 'memo') {
+      normalized.text = sanitizeText(entry.text);
+      normalized.color = sanitizeColor(entry.color, '#fff4a3');
+      if (typeof entry.x === 'number') normalized.x = entry.x;
+      if (typeof entry.y === 'number') normalized.y = entry.y;
+      return normalized;
+    }
+
+    const labels = entry.labels && typeof entry.labels === 'object' ? entry.labels : {};
+    normalized.color = sanitizeColor(entry.color, '#ef4444');
+    normalized.labels = {
+      top: sanitizeText(labels.top),
+      right: sanitizeText(labels.right),
+      bottom: sanitizeText(labels.bottom),
+      left: sanitizeText(labels.left)
+    };
+    return normalized;
+  }
+
+  function extractEntriesFromImportedJson(rawData) {
+    if (Array.isArray(rawData)) return rawData;
+    if (rawData && typeof rawData === 'object' && Array.isArray(rawData.entries)) {
+      return rawData.entries;
+    }
+    return null;
+  }
+
+  async function exportAsJsonBackup() {
+    const payload = {
+      app: 'website-memo',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      entries: state.entries
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `website-memo-backup-${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showBackupStatus('JSON 備份已匯出');
+  }
+
+  async function importFromJsonBackup(file) {
+    if (!file) return;
+
+    let parsed;
+    try {
+      const text = await file.text();
+      parsed = JSON.parse(text);
+    } catch {
+      showBackupStatus('匯入失敗：JSON 格式錯誤', true);
+      return;
+    }
+
+    const rawEntries = extractEntriesFromImportedJson(parsed);
+    if (!rawEntries) {
+      showBackupStatus('匯入失敗：找不到 entries 陣列', true);
+      return;
+    }
+
+    const sanitizedEntries = rawEntries
+      .map((entry) => sanitizeEntry(entry))
+      .filter((entry) => Boolean(entry));
+
+    await setEntries(sanitizedEntries);
+    state.entries = sanitizedEntries;
+    render();
+    showBackupStatus(`匯入完成：共 ${sanitizedEntries.length} 筆`);
   }
 
   async function deleteEntry(id) {
@@ -303,6 +414,20 @@
   domainSelect.addEventListener('change', () => {
     state.selectedDomain = domainSelect.value;
     render();
+  });
+
+  exportJsonBtn.addEventListener('click', () => {
+    exportAsJsonBackup();
+  });
+
+  importJsonBtn.addEventListener('click', () => {
+    importFileInput.click();
+  });
+
+  importFileInput.addEventListener('change', async () => {
+    const file = importFileInput.files && importFileInput.files[0];
+    await importFromJsonBackup(file);
+    importFileInput.value = '';
   });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
