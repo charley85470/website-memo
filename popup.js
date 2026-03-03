@@ -11,6 +11,8 @@
   const modeBorderBtn = document.getElementById('modeBorder');
   const memoPanel = document.getElementById('memoPanel');
   const borderPanel = document.getElementById('borderPanel');
+  const availabilityNoticeEl = document.getElementById('availabilityNotice');
+  const interactiveAreaEl = document.getElementById('interactiveArea');
 
   const scopeTypeTabButtons = [...document.querySelectorAll('#scopeTypeTabs button')];
   const parentScopeInput = document.getElementById('parentScopeInput');
@@ -28,6 +30,12 @@
     }
     statusEl.textContent = message;
     statusEl.style.color = isError ? '#b91c1c' : '#047857';
+  }
+
+  function showAvailabilityNotice(message = '') {
+    if (!availabilityNoticeEl) return;
+    availabilityNoticeEl.textContent = message;
+    availabilityNoticeEl.classList.toggle('hidden', !message);
   }
 
   function syncBorderPresetActiveState() {
@@ -289,8 +297,16 @@
   async function initialize() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || !tab.url || !/^https?:/.test(tab.url)) {
-      showStatus('請在一般網站頁面使用此擴充功能', true);
+      showAvailabilityNotice('請在一般網站頁面使用此擴充功能');
+      if (interactiveAreaEl) {
+        interactiveAreaEl.classList.add('hidden');
+      }
       return;
+    }
+
+    showAvailabilityNotice('');
+    if (interactiveAreaEl) {
+      interactiveAreaEl.classList.remove('hidden');
     }
 
     state.tabId = tab.id;

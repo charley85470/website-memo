@@ -13,6 +13,12 @@ h1 {
   margin: 0 0 10px;
   font-size: 18px;
 }
+.availability-notice {
+  min-height: 18px;
+  margin: -4px 0 10px;
+  font-size: 12px;
+  color: #b91c1c;
+}
 .mode-switch {
   display: flex;
   gap: 8px;
