@@ -3,7 +3,8 @@
     mode: 'memo',
     tabId: null,
     currentUrl: null,
-    context: null
+    context: null,
+    editingBorderId: null
   };
 
   const modeMemoBtn = document.getElementById('modeMemo');
@@ -63,6 +64,10 @@
     return 1;
   }
 
+  function getBorderScopeKey(entry) {
+    return `${entry.domain}::${entry.scopeType}::${entry.scopeValue}`;
+  }
+
   function setScopeTypeAndValue(scopeType, scopeValue) {
     const target = scopeRadios.find((radio) => radio.value === scopeType) || scopeRadios[0];
     target.checked = true;
@@ -81,7 +86,10 @@
       .filter((entry) => entry.type === 'border')
       .filter((entry) => matchesScope(entry, currentUrl));
 
-    if (!candidates.length) return false;
+    if (!candidates.length) {
+      state.editingBorderId = null;
+      return false;
+    }
 
     candidates.sort((a, b) => {
       const byScope = scopePriority(b.scopeType) - scopePriority(a.scopeType);
@@ -90,6 +98,7 @@
     });
 
     const target = candidates[0];
+    state.editingBorderId = target.id;
     setScopeTypeAndValue(target.scopeType, target.scopeValue);
     borderColorInput.value = target.color || '#ef4444';
     syncBorderPresetActiveState();
@@ -160,6 +169,10 @@
     await chrome.storage.local.set({ entries });
   }
 
+  async function saveEntries(entries) {
+    await chrome.storage.local.set({ entries });
+  }
+
   async function notifyRefresh() {
     if (!state.tabId) return;
     try {
@@ -201,9 +214,7 @@
     const scopeValue = getScopeValue(scopeType);
     const borderColor = borderColorInput.value;
 
-    const entry = {
-      id: crypto.randomUUID(),
-      type: 'border',
+    const payload = {
       domain: state.context.domain,
       scopeType,
       scopeValue,
@@ -213,17 +224,47 @@
         right: document.getElementById('labelRight').value.trim(),
         bottom: document.getElementById('labelBottom').value.trim(),
         left: document.getElementById('labelLeft').value.trim()
-      },
-      createdAt: Date.now()
+      }
     };
 
-    await saveEntry(entry);
+    const entries = await getEntries();
+    const hasEditingTarget = state.editingBorderId && entries.some((item) => item.id === state.editingBorderId);
+    const scopeKey = getBorderScopeKey(payload);
+    const existingSameScope = entries.find((item) => item.type === 'border' && getBorderScopeKey(item) === scopeKey);
+
+    let targetId = hasEditingTarget ? state.editingBorderId : null;
+    if (existingSameScope && existingSameScope.id !== targetId) {
+      targetId = existingSameScope.id;
+    }
+
+    let nextEntries;
+    let isUpdate = false;
+
+    if (targetId) {
+      isUpdate = true;
+      nextEntries = entries.map((item) => (item.id === targetId ? { ...item, ...payload } : item));
+    } else {
+      const entry = {
+        id: crypto.randomUUID(),
+        type: 'border',
+        ...payload,
+        createdAt: Date.now()
+      };
+      targetId = entry.id;
+      nextEntries = [...entries, entry];
+    }
+
+    nextEntries = nextEntries.filter((item) => {
+      if (item.type !== 'border') return true;
+      if (getBorderScopeKey(item) !== scopeKey) return true;
+      return item.id === targetId;
+    });
+
+    state.editingBorderId = targetId;
+    await saveEntries(nextEntries);
+
     await notifyRefresh();
-    document.getElementById('labelTop').value = '';
-    document.getElementById('labelRight').value = '';
-    document.getElementById('labelBottom').value = '';
-    document.getElementById('labelLeft').value = '';
-    showStatus('Border 已新增');
+    showStatus(isUpdate ? 'Border 已更新' : 'Border 已新增');
   }
 
   async function initialize() {

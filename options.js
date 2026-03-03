@@ -47,7 +47,31 @@
   }
 
   async function setEntries(entries) {
-    await chrome.storage.local.set({ entries });
+    await chrome.storage.local.set({ entries: normalizeEntries(entries) });
+  }
+
+  function getBorderScopeKey(entry) {
+    return `${entry.domain}::${entry.scopeType}::${entry.scopeValue}`;
+  }
+
+  function normalizeEntries(entries) {
+    const borderMap = new Map();
+    const memoEntries = [];
+
+    entries.forEach((entry) => {
+      if (entry.type !== 'border') {
+        memoEntries.push(entry);
+        return;
+      }
+
+      const key = getBorderScopeKey(entry);
+      const current = borderMap.get(key);
+      if (!current || (entry.createdAt || 0) >= (current.createdAt || 0)) {
+        borderMap.set(key, entry);
+      }
+    });
+
+    return [...memoEntries, ...borderMap.values()];
   }
 
   function sanitizeScopeType(scopeType) {
@@ -142,9 +166,9 @@
       return;
     }
 
-    const sanitizedEntries = rawEntries
+    const sanitizedEntries = normalizeEntries(rawEntries
       .map((entry) => sanitizeEntry(entry))
-      .filter((entry) => Boolean(entry));
+      .filter((entry) => Boolean(entry)));
 
     await setEntries(sanitizedEntries);
     state.entries = sanitizedEntries;

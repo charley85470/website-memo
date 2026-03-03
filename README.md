@@ -8,6 +8,9 @@ Chrome Extension（Manifest V3）
 - 為網站加上四邊 Border（可關閉，重新進入頁面會再顯示）
 - Border 可設定上下左右四個位置的說明文字
 - Border 顏色支援快速色票（紅橙黃綠藍靛紫）與自訂選色
+- Border 作用規則：
+  - 同一作用路徑（domain / parent / page + scopeValue）僅保留一筆設定
+  - 同頁同時命中多種作用域時，優先順序為 `page > parent > domain`
 - 作用域支援：
   - domain 下所有頁面
   - 同父目錄下所有頁面（可自行編輯路徑）

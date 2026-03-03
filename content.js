@@ -114,6 +114,12 @@
     return false;
   }
 
+  function scopePriority(scopeType) {
+    if (scopeType === 'page') return 3;
+    if (scopeType === 'parent') return 2;
+    return 1;
+  }
+
   async function getEntries() {
     const result = await chrome.storage.local.get({ entries: [] });
     return Array.isArray(result.entries) ? result.entries : [];
@@ -252,14 +258,24 @@
 
     const entries = await getEntries();
     const matched = entries.filter((entry) => matchesScope(entry, currentUrl));
+    const matchedBorders = matched
+      .filter((entry) => entry.type === 'border')
+      .sort((a, b) => {
+        const byScope = scopePriority(b.scopeType) - scopePriority(a.scopeType);
+        if (byScope !== 0) return byScope;
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      });
+    const selectedBorder = matchedBorders[0] || null;
 
     let memoIndex = 0;
     for (const entry of matched) {
       if (entry.type === 'memo') {
         renderMemo(entry, memoIndex++);
-      } else if (entry.type === 'border') {
-        renderBorder(entry);
       }
+    }
+
+    if (selectedBorder) {
+      renderBorder(selectedBorder);
     }
   }
 
