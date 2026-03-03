@@ -63,6 +63,23 @@ input[type="color"] {
   background: #fff;
   margin-bottom: 8px;
 }
+.color-presets {
+  display: flex;
+  gap: 6px;
+  margin: -2px 0 10px;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: var(--swatch-color);
+  padding: 0;
+}
+.color-swatch.active {
+  outline: 2px solid #111827;
+  outline-offset: 1px;
+}
 button {
   width: 100%;
   border: none;

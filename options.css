@@ -104,6 +104,22 @@ button.danger { background: #dc2626; }
   display: grid;
   gap: 4px;
 }
+.color-presets {
+  display: flex;
+  gap: 6px;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: var(--swatch-color);
+  padding: 0;
+}
+.color-swatch.active {
+  outline: 2px solid #111827;
+  outline-offset: 1px;
+}
 .hidden {
   display: none;
 }

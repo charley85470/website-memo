@@ -16,6 +16,16 @@
     entries: []
   };
 
+  const BORDER_PRESET_COLORS = [
+    '#ef4444',
+    '#f97316',
+    '#eab308',
+    '#22c55e',
+    '#3b82f6',
+    '#4f46e5',
+    '#a855f7'
+  ];
+
   function formatScope(entry) {
     if (entry.scopeType === 'domain') return `domain: ${entry.scopeValue}`;
     if (entry.scopeType === 'parent') return `父目錄: ${entry.scopeValue}`;
@@ -191,6 +201,36 @@
     return wrapper;
   }
 
+  function createBorderColorPresets(colorInput) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'color-presets';
+
+    const syncActive = () => {
+      const current = (colorInput.value || '').toLowerCase();
+      [...wrapper.querySelectorAll('.color-swatch')].forEach((button) => {
+        button.classList.toggle('active', (button.dataset.color || '').toLowerCase() === current);
+      });
+    };
+
+    BORDER_PRESET_COLORS.forEach((color) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'color-swatch';
+      button.dataset.color = color;
+      button.style.setProperty('--swatch-color', color);
+      button.title = color;
+      button.addEventListener('click', () => {
+        colorInput.value = color;
+        syncActive();
+      });
+      wrapper.appendChild(button);
+    });
+
+    colorInput.addEventListener('input', syncActive);
+    syncActive();
+    return wrapper;
+  }
+
   function buildMemoItem(entry) {
     const node = itemTemplate.content.firstElementChild.cloneNode(true);
     node.querySelector('.meta').textContent = formatScope(entry);
@@ -274,6 +314,7 @@
     colorInput.name = 'color';
     colorInput.value = entry.color || '#ef4444';
     colorRow.appendChild(colorInput);
+    colorRow.appendChild(createBorderColorPresets(colorInput));
 
     const sides = ['top', 'right', 'bottom', 'left'];
     const sideFields = {};
