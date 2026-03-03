@@ -2,7 +2,6 @@
   const ROOT_ATTR = 'data-wmemo-root';
   const STYLE_ID = 'wmemo-style';
   const runtimeHiddenMemoIds = new Set();
-  const runtimeHiddenBorderIds = new Set();
   let lastUrl = location.href;
 
   function ensureStyles() {
@@ -14,6 +13,7 @@
       .wmemo-host { position: fixed; z-index: 2147483647; pointer-events: none; }
       .wmemo-note {
         position: fixed;
+        z-index: 2147483646;
         min-width: 180px;
         max-width: 280px;
         border: 1px solid rgba(0,0,0,0.2);
@@ -52,11 +52,13 @@
       .wmemo-border {
         position: fixed;
         inset: 0;
+        z-index: 2147483647;
         pointer-events: none;
         box-sizing: border-box;
       }
       .wmemo-border-label {
         position: fixed;
+        z-index: 2147483647;
         pointer-events: auto;
         background: rgba(0,0,0,0.72);
         color: #fff;
@@ -72,19 +74,6 @@
       .wmemo-border-right { top: 50%; right: 8px; transform: translateY(-50%); }
       .wmemo-border-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
       .wmemo-border-left { top: 50%; left: 8px; transform: translateY(-50%); }
-      .wmemo-border-close {
-        position: fixed;
-        top: 8px;
-        right: 8px;
-        pointer-events: auto;
-        border: none;
-        background: rgba(0,0,0,0.72);
-        color: #fff;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        cursor: pointer;
-      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -225,25 +214,11 @@
   }
 
   function renderBorder(entry) {
-    if (runtimeHiddenBorderIds.has(entry.id)) return;
-
     const border = document.createElement('div');
     border.setAttribute(ROOT_ATTR, '1');
     border.className = 'wmemo-border';
     border.style.border = `4px solid ${entry.color || '#ef4444'}`;
 
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'wmemo-border-close';
-    close.textContent = '×';
-    close.addEventListener('click', () => {
-      runtimeHiddenBorderIds.add(entry.id);
-      border.remove();
-      close.remove();
-      labels.forEach((label) => label.remove());
-    });
-
-    const labels = [];
     const sides = [
       ['top', 'wmemo-border-top'],
       ['right', 'wmemo-border-right'],
@@ -258,12 +233,10 @@
       label.setAttribute(ROOT_ATTR, '1');
       label.className = `wmemo-border-label ${className}`;
       label.textContent = text;
-      labels.push(label);
       document.documentElement.appendChild(label);
     }
 
     document.documentElement.appendChild(border);
-    document.documentElement.appendChild(close);
   }
 
   async function renderAll() {
@@ -294,7 +267,6 @@
     if (location.href === lastUrl) return;
     lastUrl = location.href;
     runtimeHiddenMemoIds.clear();
-    runtimeHiddenBorderIds.clear();
     renderAll();
   }
 
