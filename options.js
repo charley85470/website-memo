@@ -190,54 +190,12 @@
     render();
   }
 
-  function createCommonEditFields(entry) {
+  function createScopeSummary(entry) {
     const wrapper = document.createElement('div');
-
-    const scopeTypeRow = document.createElement('div');
-    scopeTypeRow.className = 'edit-row';
-    const scopeTypeLabel = document.createElement('label');
-    scopeTypeLabel.textContent = '作用域類型';
-    const scopeTypeInput = document.createElement('input');
-    scopeTypeInput.type = 'hidden';
-    scopeTypeInput.name = 'scopeType';
-    scopeTypeInput.value = entry.scopeType || 'domain';
-    const scopeTypeTabs = document.createElement('div');
-    scopeTypeTabs.className = 'scope-tabs';
-    [
-      { value: 'domain', label: 'domain' },
-      { value: 'parent', label: '父目錄' },
-      { value: 'page', label: '單頁' }
-    ].forEach(({ value, label }) => {
-      const tab = document.createElement('button');
-      tab.type = 'button';
-      tab.textContent = label;
-      tab.dataset.scope = value;
-      tab.classList.toggle('active', scopeTypeInput.value === value);
-      tab.addEventListener('click', () => {
-        scopeTypeInput.value = value;
-        [...scopeTypeTabs.querySelectorAll('button')].forEach((button) => {
-          button.classList.toggle('active', button === tab);
-        });
-      });
-      scopeTypeTabs.appendChild(tab);
-    });
-    scopeTypeRow.appendChild(scopeTypeLabel);
-    scopeTypeRow.appendChild(scopeTypeTabs);
-    scopeTypeRow.appendChild(scopeTypeInput);
-
-    const scopeValueRow = document.createElement('div');
-    scopeValueRow.className = 'edit-row';
-    const scopeValueLabel = document.createElement('label');
-    scopeValueLabel.textContent = '作用域值';
-    const scopeValueInput = document.createElement('input');
-    scopeValueInput.type = 'text';
-    scopeValueInput.name = 'scopeValue';
-    scopeValueInput.value = entry.scopeValue || '';
-    scopeValueRow.appendChild(scopeValueLabel);
-    scopeValueRow.appendChild(scopeValueInput);
-
-    wrapper.appendChild(scopeTypeRow);
-    wrapper.appendChild(scopeValueRow);
+    wrapper.className = 'edit-row scope-summary';
+    const text = document.createElement('div');
+    text.textContent = formatScope(entry);
+    wrapper.appendChild(text);
     return wrapper;
   }
 
@@ -277,7 +235,7 @@
     node.querySelector('.item-content').textContent = entry.text || '';
 
     const form = node.querySelector('.edit-form');
-    form.appendChild(createCommonEditFields(entry));
+    form.appendChild(createScopeSummary(entry));
 
     const textRow = document.createElement('div');
     textRow.className = 'edit-row';
@@ -320,8 +278,6 @@
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       updateEntry(entry.id, {
-        scopeType: form.elements.scopeType.value,
-        scopeValue: form.elements.scopeValue.value.trim(),
         text: form.elements.text.value,
         color: form.elements.color.value
       });
@@ -344,7 +300,7 @@
     ].join('\n');
 
     const form = node.querySelector('.edit-form');
-    form.appendChild(createCommonEditFields(entry));
+    form.appendChild(createScopeSummary(entry));
 
     const colorRow = document.createElement('div');
     colorRow.className = 'edit-row';
@@ -391,8 +347,6 @@
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       updateEntry(entry.id, {
-        scopeType: form.elements.scopeType.value,
-        scopeValue: form.elements.scopeValue.value.trim(),
         color: form.elements.color.value,
         labels: {
           top: sideFields.top.value.trim(),
