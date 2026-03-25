@@ -4,6 +4,7 @@
   const runtimeHiddenMemoIds = new Set();
   const runtimeHiddenBorderUntil = new Map();
   const BORDER_HIDE_DURATION_MS = 5 * 60 * 1000;
+  let activeCursorBannerCleanup = null;
   let lastUrl = location.href;
 
   function ensureStyles() {
@@ -94,6 +95,19 @@
       .wmemo-border-right { top: 50%; right: 8px; transform: translateY(-50%); }
       .wmemo-border-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
       .wmemo-border-left { top: 50%; left: 8px; transform: translateY(-50%); }
+      .wmemo-cursor-banner {
+        position: fixed;
+        z-index: 2147483648;
+        pointer-events: none;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        max-width: 40vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: left 0s, top 0s;
+      }
     `;
     document.documentElement.appendChild(style);
   }
@@ -164,6 +178,10 @@
   function clearRendered() {
     const existing = document.querySelectorAll(`[${ROOT_ATTR}]`);
     existing.forEach((node) => node.remove());
+    if (activeCursorBannerCleanup) {
+      activeCursorBannerCleanup();
+      activeCursorBannerCleanup = null;
+    }
   }
 
   function createHost() {
@@ -266,7 +284,9 @@
     const border = document.createElement('div');
     border.setAttribute(ROOT_ATTR, '1');
     border.className = 'wmemo-border';
-    border.style.border = `4px solid ${borderColor}`;
+    if (entry.borderVisible !== false) {
+      border.style.border = `${entry.borderWidth ?? 4}px solid ${borderColor}`;
+    }
     renderedNodes.push(border);
 
     const sides = [
@@ -297,10 +317,40 @@
     closeButton.title = '暫時關閉 Border 提示（5 分鐘）';
     closeButton.style.background = borderColor;
     closeButton.style.color = getContrastTextColor(borderColor);
+
+    const priorityOrder = ['top', 'right', 'bottom', 'left'];
+    let cursorBannerCleanup = null;
+    const cursorLabelText = priorityOrder.reduce(
+      (found, side) => (found !== null ? found : entry.labels?.[side] || null),
+      null
+    );
+    if (cursorLabelText && entry.cursorBannerVisible !== false) {
+      const cursorBanner = document.createElement('div');
+      cursorBanner.setAttribute(ROOT_ATTR, '1');
+      cursorBanner.className = 'wmemo-cursor-banner';
+      cursorBanner.style.background = borderColor;
+      cursorBanner.style.color = getContrastTextColor(borderColor);
+      cursorBanner.textContent = cursorLabelText;
+      document.documentElement.appendChild(cursorBanner);
+      renderedNodes.push(cursorBanner);
+
+      const onMouseMove = (e) => {
+        cursorBanner.style.left = `${e.clientX + 14}px`;
+        cursorBanner.style.top = `${e.clientY + 10}px`;
+      };
+      document.addEventListener('mousemove', onMouseMove, { passive: true });
+      cursorBannerCleanup = () => document.removeEventListener('mousemove', onMouseMove);
+      activeCursorBannerCleanup = cursorBannerCleanup;
+    }
+
     closeButton.addEventListener('click', () => {
       const hiddenUntil = Date.now() + BORDER_HIDE_DURATION_MS;
       runtimeHiddenBorderUntil.set(entry.id, hiddenUntil);
       renderedNodes.forEach((node) => node.remove());
+      if (cursorBannerCleanup) {
+        cursorBannerCleanup();
+        activeCursorBannerCleanup = null;
+      }
 
       setTimeout(() => {
         const currentHiddenUntil = runtimeHiddenBorderUntil.get(entry.id);
@@ -384,6 +434,7 @@
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type === 'REFRESH_OVERLAYS') {
+      runtimeHiddenBorderUntil.clear();
       renderAll();
     }
   });

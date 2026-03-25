@@ -29,6 +29,10 @@ h1 {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-bottom: 12px;
+}
+.domain-picker select {
+  min-width: 200px;
 }
 .backup-tools {
   display: flex;

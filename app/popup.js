@@ -20,6 +20,9 @@
   const scopePreview = document.getElementById('scopePreview');
   const statusEl = document.getElementById('popupStatus');
   const borderColorInput = document.getElementById('borderColor');
+  const borderWidthInput = document.getElementById('borderWidth');
+  const borderVisibleInput = document.getElementById('borderVisible');
+  const cursorBannerVisibleInput = document.getElementById('cursorBannerVisible');
   const borderColorPresetButtons = [...document.querySelectorAll('#borderColorPresets .color-swatch')];
     const addBorderBtn = document.getElementById('addBorder');
 
@@ -118,6 +121,9 @@
     setScopeTypeAndValue(target.scopeType, target.scopeValue);
     borderColorInput.value = target.color || '#ef4444';
     syncBorderPresetActiveState();
+    borderWidthInput.value = target.borderWidth ?? 4;
+    borderVisibleInput.checked = target.borderVisible !== false;
+    cursorBannerVisibleInput.checked = target.cursorBannerVisible !== false;
 
     const labels = target.labels || {};
     document.getElementById('labelTop').value = labels.top || '';
@@ -240,11 +246,15 @@
     const scopeValue = getScopeValue(scopeType);
     const borderColor = borderColorInput.value;
 
+    const borderWidthValue = Math.max(1, Math.min(20, parseInt(borderWidthInput.value, 10) || 4));
     const payload = {
       domain: state.context.domain,
       scopeType,
       scopeValue,
       color: borderColor,
+      borderWidth: borderWidthValue,
+      borderVisible: borderVisibleInput.checked,
+      cursorBannerVisible: cursorBannerVisibleInput.checked,
       labels: {
         top: document.getElementById('labelTop').value.trim(),
         right: document.getElementById('labelRight').value.trim(),

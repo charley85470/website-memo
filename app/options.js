@@ -41,6 +41,10 @@
     return [...new Set(entries.map((entry) => entry.domain).filter(Boolean))].sort();
   }
 
+  function getDomainsForTab(entries, tab) {
+    return getUniqueDomains(entries.filter((entry) => entry.type === tab));
+  }
+
   async function getEntries() {
     const result = await chrome.storage.local.get({ entries: [] });
     return Array.isArray(result.entries) ? result.entries : [];
@@ -376,7 +380,7 @@
   }
 
   function renderDomainSelect() {
-    const domains = getUniqueDomains(state.entries);
+    const domains = getDomainsForTab(state.entries, state.tab);
     domainSelect.innerHTML = '';
 
     if (!domains.length) {
