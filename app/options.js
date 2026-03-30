@@ -276,7 +276,7 @@
     });
 
     node.querySelector('.btn-delete').addEventListener('click', () => {
-      deleteEntry(entry.id);
+      if (confirm('確定要刪除此備忘錄嗎？')) deleteEntry(entry.id);
     });
 
     form.addEventListener('submit', (ev) => {
@@ -345,7 +345,7 @@
     });
 
     node.querySelector('.btn-delete').addEventListener('click', () => {
-      deleteEntry(entry.id);
+      if (confirm('確定要刪除此框線設定嗎？')) deleteEntry(entry.id);
     });
 
     form.addEventListener('submit', (ev) => {
